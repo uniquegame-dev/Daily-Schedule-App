@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="24"
+        android:translateY="24">
+        <!-- Calendar Base (60x60 scale) -->
+        <!-- White base card with rounded corners -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M10,8 C6.7,8 4,10.7 4,14 L4,48 C4,51.3 6.7,54 10,54 L50,54 C53.3,54 56,51.3 56,48 L56,14 C56,10.7 53.3,8 50,8 L44,8 L44,4 L38,4 L38,8 L22,8 L22,4 L16,4 L16,8 L10,8 Z M10,18 L50,18 L50,48 L10,48 L10,18 Z" />
+        <!-- Top header bar on calendar -->
+        <path
+            android:fillColor="#FF80CBC4"
+            android:pathData="M10,8 L50,8 C53.3,8 56,10.7 56,14 L56,18 L4,18 L4,14 C4,10.7 6.7,8 10,8 Z" />
+        <!-- Checkmark inside calendar -->
+        <path
+            android:fillColor="#FF4CAF50"
+            android:pathData="M23,33 L18,28 L14,32 L23,41 L44,20 L40,16 Z" />
+    </group>
+</vector>
