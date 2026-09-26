@@ -47,10 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.TaskEntity
+import com.example.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -101,6 +103,7 @@ fun AddTaskBottomSheet(
     var category by remember(editingTask) { mutableStateOf(editingTask?.category ?: "General") }
 
     var titleError by remember { mutableStateOf(false) }
+    var dateTimeError by remember { mutableStateOf(false) }
 
     // Date Picker Dialog trigger
     val openDatePicker = {
@@ -164,7 +167,7 @@ fun AddTaskBottomSheet(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = if (editingTask != null) "Edit Task" else "Add New Task",
+                text = if (editingTask != null) stringResource(R.string.edit_task) else stringResource(R.string.add_new_task),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -178,10 +181,10 @@ fun AddTaskBottomSheet(
                     title = it
                     if (it.isNotBlank()) titleError = false
                 },
-                label = { Text("Task Title *") },
+                label = { Text(stringResource(R.string.task_title_required)) },
                 isError = titleError,
                 supportingText = if (titleError) {
-                    { Text("Title is required") }
+                    { Text(stringResource(R.string.title_required)) }
                 } else null,
                 singleLine = true,
                 modifier = Modifier
@@ -191,6 +194,15 @@ fun AddTaskBottomSheet(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            if (dateTimeError) {
+                Text(
+                    text = stringResource(R.string.invalid_date_time),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Date & Time Summary Row
             Row(
@@ -212,14 +224,14 @@ fun AddTaskBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Date",
+                            contentDescription = stringResource(R.string.date),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Date",
+                                text = stringResource(R.string.date),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -249,14 +261,14 @@ fun AddTaskBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
-                            contentDescription = "Time",
+                            contentDescription = stringResource(R.string.time),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Time (12-Hr)",
+                                text = stringResource(R.string.time_12_hour),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -297,7 +309,7 @@ fun AddTaskBottomSheet(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Select Time",
+                                text = stringResource(R.string.select_time),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -315,7 +327,7 @@ fun AddTaskBottomSheet(
                                     timeStr = TimeUtils.format12HourTime(hour12, selectedMinute, "AM")
                                 },
                                 label = {
-                                    Text("AM", fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.am), fontWeight = FontWeight.Bold)
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -331,7 +343,7 @@ fun AddTaskBottomSheet(
                                     timeStr = TimeUtils.format12HourTime(hour12, selectedMinute, "PM")
                                 },
                                 label = {
-                                    Text("PM", fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.pm), fontWeight = FontWeight.Bold)
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -346,7 +358,7 @@ fun AddTaskBottomSheet(
 
                     // Hour Row (1 to 12)
                     Text(
-                        text = "Hour (1 - 12):",
+                        text = stringResource(R.string.hour_range),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -376,7 +388,7 @@ fun AddTaskBottomSheet(
 
                     // Minute Row (:00, :15, :30, :45)
                     Text(
-                        text = "Minute:",
+                        text = stringResource(R.string.minute),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -415,7 +427,7 @@ fun AddTaskBottomSheet(
 
             // Category Selection
             Text(
-                text = "Category",
+                text = stringResource(R.string.category),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -449,19 +461,19 @@ fun AddTaskBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Alarm,
-                        contentDescription = "Reminder",
+                        contentDescription = stringResource(R.string.reminder),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Set Notification Reminder",
+                            text = stringResource(R.string.set_notification_reminder),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Get an alert on your device",
+                            text = stringResource(R.string.get_device_alert),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -482,7 +494,7 @@ fun AddTaskBottomSheet(
             if (hasReminder) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Alert Offset",
+                    text = stringResource(R.string.alert_offset),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -492,9 +504,9 @@ fun AddTaskBottomSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val offsets = listOf(
-                        0 to "At task time",
-                        5 to "5 minutes before",
-                        15 to "15 minutes before"
+                        0 to stringResource(R.string.at_task_time),
+                        5 to stringResource(R.string.minutes_before_5),
+                        15 to stringResource(R.string.minutes_before_15)
                     )
                     offsets.forEach { (mins, label) ->
                         FilterChip(
@@ -517,7 +529,7 @@ fun AddTaskBottomSheet(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes & Description (Optional)") },
+                label = { Text(stringResource(R.string.notes_optional)) },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier
@@ -538,7 +550,7 @@ fun AddTaskBottomSheet(
                     onClick = onDismiss,
                     modifier = Modifier.testTag("btn_cancel_task")
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -547,7 +559,10 @@ fun AddTaskBottomSheet(
                     onClick = {
                         if (title.isBlank()) {
                             titleError = true
+                        } else if (TimeUtils.parseDateAndTimeToMillis(dateStr, timeStr) == null) {
+                            dateTimeError = true
                         } else {
+                            dateTimeError = false
                             onSave(
                                 editingTask?.id ?: 0L,
                                 title,
@@ -563,7 +578,7 @@ fun AddTaskBottomSheet(
                     modifier = Modifier.testTag("btn_save_task"),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(if (editingTask != null) "Update Task" else "Save Task")
+                    Text(if (editingTask != null) stringResource(R.string.update_task) else stringResource(R.string.save_task))
                 }
             }
         }

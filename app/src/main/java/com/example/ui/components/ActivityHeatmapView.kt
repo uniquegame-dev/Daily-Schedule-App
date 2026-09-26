@@ -36,12 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.TaskEntity
+import com.example.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -127,7 +129,7 @@ fun ActivityHeatmapView(
                     ) {
                         Icon(
                             imageVector = Icons.Default.GridOn,
-                            contentDescription = "Activity Heatmap",
+                            contentDescription = stringResource(R.string.activity_heatmap),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -135,14 +137,14 @@ fun ActivityHeatmapView(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Activity Heatmap",
+                            text = stringResource(R.string.activity_heatmap),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "$completedInMonth completed in $currentMonthYearAbbrev",
+                            text = stringResource(R.string.completed_in_month, completedInMonth, currentMonthYearAbbrev),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -167,7 +169,7 @@ fun ActivityHeatmapView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous Month"
+                            contentDescription = stringResource(R.string.previous_month)
                         )
                     }
 
@@ -191,7 +193,7 @@ fun ActivityHeatmapView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next Month"
+                            contentDescription = stringResource(R.string.next_month)
                         )
                     }
                 }
@@ -309,7 +311,7 @@ fun ActivityHeatmapView(
             ) {
                 if (selectedDateStr != null) {
                     Text(
-                        text = "Date: $selectedDateStr (Tap cell to clear)",
+                        text = stringResource(R.string.selected_heatmap_date, selectedDateStr),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
@@ -319,7 +321,7 @@ fun ActivityHeatmapView(
                     )
                 } else {
                     Text(
-                        text = "Tap a square to inspect tasks",
+                        text = stringResource(R.string.heatmap_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -335,7 +337,7 @@ fun ActivityHeatmapView(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Less",
+                        text = stringResource(R.string.less),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 10.sp
@@ -358,7 +360,7 @@ fun ActivityHeatmapView(
                     }
 
                     Text(
-                        text = "More",
+                        text = stringResource(R.string.more),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 10.sp

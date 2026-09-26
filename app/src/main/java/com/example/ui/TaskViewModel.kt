@@ -17,12 +17,16 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getInstance(application)
@@ -30,15 +34,15 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val displayDateFormatter = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
 
-    // Current today date string
-    val todayDateStr: String = dateFormatter.format(Date())
+    private val _todayDateStr = MutableStateFlow(currentDateString())
+    val todayDateStr: StateFlow<String> = _todayDateStr.asStateFlow()
 
     // Active Navigation Tab
     private val _currentTab = MutableStateFlow(0) // 0: Today, 1: Upcoming, 2: History
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
     // Selected Date in Calendar View (defaults to Today)
-    private val _selectedCalendarDate = MutableStateFlow(todayDateStr)
+    private val _selectedCalendarDate = MutableStateFlow(todayDateStr.value)
     val selectedCalendarDate: StateFlow<String> = _selectedCalendarDate.asStateFlow()
 
     // Add / Edit Task Dialog/Sheet visibility
@@ -52,8 +56,11 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _categoryFilter = MutableStateFlow("All")
-    val categoryFilter: StateFlow<String> = _categoryFilter.asStateFlow()
+    private val _todayCategoryFilter = MutableStateFlow("All")
+    val todayCategoryFilter: StateFlow<String> = _todayCategoryFilter.asStateFlow()
+
+    private val _historyCategoryFilter = MutableStateFlow("All")
+    val historyCategoryFilter: StateFlow<String> = _historyCategoryFilter.asStateFlow()
 
     private val _isPendingSummaryEnabled = MutableStateFlow(
         PendingSummaryNotificationManager.isPendingSummaryEnabled(application)
@@ -61,7 +68,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     val isPendingSummaryEnabled: StateFlow<Boolean> = _isPendingSummaryEnabled.asStateFlow()
 
     // Unfiltered today tasks for pending summary notification
-    val allTodayTasks: StateFlow<List<TaskEntity>> = repository.getTasksForDate(todayDateStr)
+    val allTodayTasks: StateFlow<List<TaskEntity>> = _todayDateStr
+        .flatMapLatest(repository::getTasksForDate)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -87,6 +95,13 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
         }
+
+        viewModelScope.launch {
+            while (isActive) {
+                refreshToday()
+                delay(millisUntilNextMinute())
+            }
+        }
     }
 
     fun setPendingSummaryEnabled(enabled: Boolean) {
@@ -100,8 +115,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Today Tasks Flow
-    val todayTasks: StateFlow<List<TaskEntity>> = repository.getTasksForDate(todayDateStr)
-        .combine(categoryFilter) { tasks, cat ->
+    val todayTasks: StateFlow<List<TaskEntity>> = allTodayTasks
+        .combine(todayCategoryFilter) { tasks, cat ->
             if (cat == "All") tasks else tasks.filter { it.category == cat }
         }
         .stateIn(
@@ -128,7 +143,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     // Upcoming Tasks Flow (Date > today)
-    val upcomingTasks: StateFlow<List<TaskEntity>> = repository.getUpcomingTasks(todayDateStr)
+    val upcomingTasks: StateFlow<List<TaskEntity>> = _todayDateStr
+        .flatMapLatest(repository::getUpcomingTasks)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -136,18 +152,21 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     // Completed / History Tasks Flow
-    val historyTasks: StateFlow<List<TaskEntity>> = repository.allTasks
-        .combine(_searchQuery) { tasks, query ->
+    val historyTasks: StateFlow<List<TaskEntity>> = combine(
+        repository.allTasks,
+        _searchQuery,
+        _todayDateStr
+    ) { tasks, query, today ->
             tasks.filter { task ->
                 val matchesQuery = query.isBlank() ||
                         task.title.contains(query, ignoreCase = true) ||
                         task.notes.contains(query, ignoreCase = true)
                 // In history, we show completed tasks OR past overdue tasks
-                val isPastOrCompleted = task.isCompleted || task.date < todayDateStr
+                val isPastOrCompleted = task.isCompleted || task.date < today
                 matchesQuery && isPastOrCompleted
             }
         }
-        .combine(categoryFilter) { tasks, cat ->
+        .combine(historyCategoryFilter) { tasks, cat ->
             if (cat == "All") tasks else tasks.filter { it.category == cat }
         }
         .stateIn(
@@ -168,8 +187,16 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         _searchQuery.value = query
     }
 
-    fun setCategoryFilter(category: String) {
-        _categoryFilter.value = category
+    fun setTodayCategoryFilter(category: String) {
+        _todayCategoryFilter.value = category
+    }
+
+    fun setHistoryCategoryFilter(category: String) {
+        _historyCategoryFilter.value = category
+    }
+
+    fun refreshToday() {
+        _todayDateStr.value = currentDateString()
     }
 
     fun openAddTaskSheet(forDateStr: String? = null) {
@@ -220,7 +247,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         if (title.isBlank()) return
 
         viewModelScope.launch {
-            val dueTimestamp = parseDateAndTimeToMillis(date, time)
+            val dueTimestamp = parseDateAndTimeToMillis(date, time) ?: return@launch
+            val existing = if (id != 0L) repository.getTaskById(id) else null
             val task = TaskEntity(
                 id = id,
                 title = title.trim(),
@@ -228,7 +256,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 date = date,
                 time = time,
                 dueTimestamp = dueTimestamp,
-                isCompleted = false,
+                isCompleted = existing?.isCompleted ?: false,
+                completedAtTimestamp = existing?.completedAtTimestamp,
                 hasReminder = hasReminder,
                 reminderMinutesBefore = reminderMinutesBefore,
                 category = category
@@ -269,7 +298,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         ReminderScheduler.showTestNotification(getApplication())
     }
 
-    private fun parseDateAndTimeToMillis(dateStr: String, timeStr: String): Long {
+    private fun parseDateAndTimeToMillis(dateStr: String, timeStr: String): Long? {
         return TimeUtils.parseDateAndTimeToMillis(dateStr, timeStr)
     }
 
@@ -286,7 +315,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 notes = "Review daily sprint goals and discuss blockers.",
                 date = today,
                 time = "09:30 AM",
-                dueTimestamp = parseDateAndTimeToMillis(today, "09:30 AM"),
+                dueTimestamp = requireNotNull(parseDateAndTimeToMillis(today, "09:30 AM")),
                 isCompleted = false,
                 hasReminder = true,
                 reminderMinutesBefore = 15,
@@ -297,7 +326,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 notes = "Drink 500ml water and stretch for 10 minutes.",
                 date = today,
                 time = "11:00 AM",
-                dueTimestamp = parseDateAndTimeToMillis(today, "11:00 AM"),
+                dueTimestamp = requireNotNull(parseDateAndTimeToMillis(today, "11:00 AM")),
                 isCompleted = true,
                 completedAtTimestamp = System.currentTimeMillis(),
                 hasReminder = false,
@@ -308,7 +337,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 notes = "Finish implementing local storage & offline database features.",
                 date = today,
                 time = "02:00 PM",
-                dueTimestamp = parseDateAndTimeToMillis(today, "02:00 PM"),
+                dueTimestamp = requireNotNull(parseDateAndTimeToMillis(today, "02:00 PM")),
                 isCompleted = false,
                 hasReminder = true,
                 reminderMinutesBefore = 0,
@@ -319,7 +348,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 notes = "Leg day and 20 min cardio.",
                 date = today,
                 time = "06:00 PM",
-                dueTimestamp = parseDateAndTimeToMillis(today, "06:00 PM"),
+                dueTimestamp = requireNotNull(parseDateAndTimeToMillis(today, "06:00 PM")),
                 isCompleted = false,
                 hasReminder = true,
                 reminderMinutesBefore = 15,
@@ -330,7 +359,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 notes = "Buy fresh veggies, oat milk, and fruits.",
                 date = tomorrow,
                 time = "10:00 AM",
-                dueTimestamp = parseDateAndTimeToMillis(tomorrow, "10:00 AM"),
+                dueTimestamp = requireNotNull(parseDateAndTimeToMillis(tomorrow, "10:00 AM")),
                 isCompleted = false,
                 hasReminder = true,
                 reminderMinutesBefore = 15,
@@ -339,7 +368,19 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         for (task in initialTasks) {
-            repository.insertTask(task)
+            val taskId = repository.insertTask(task)
+            if (task.hasReminder && !task.isCompleted) {
+                ReminderScheduler.scheduleTaskReminder(getApplication(), task.copy(id = taskId))
+            }
         }
+    }
+
+    private fun currentDateString(): String = synchronized(dateFormatter) {
+        dateFormatter.format(Date())
+    }
+
+    private fun millisUntilNextMinute(): Long {
+        val now = System.currentTimeMillis()
+        return (60_000L - (now % 60_000L)).coerceAtLeast(1_000L)
     }
 }

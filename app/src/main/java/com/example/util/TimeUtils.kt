@@ -60,7 +60,7 @@ object TimeUtils {
     /**
      * Converts date string ("yyyy-MM-dd") and time string ("02:30 PM" or "14:30") to epoch millis.
      */
-    fun parseDateAndTimeToMillis(dateStr: String, timeStr: String): Long {
+    fun parseDateAndTimeToMillis(dateStr: String, timeStr: String): Long? {
         val trimmedTime = timeStr.trim()
         val tryFormats = listOf(
             SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.US),
@@ -69,11 +69,12 @@ object TimeUtils {
             SimpleDateFormat("yyyy-MM-dd H:mm", Locale.US)
         )
         for (fmt in tryFormats) {
+            fmt.isLenient = false
             try {
                 val parsed = fmt.parse("$dateStr $trimmedTime")
                 if (parsed != null) return parsed.time
             } catch (_: Exception) {}
         }
-        return System.currentTimeMillis()
+        return null
     }
 }

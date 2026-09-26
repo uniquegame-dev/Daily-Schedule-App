@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.TaskEntity
 import com.example.util.TimeUtils
 
@@ -37,6 +38,11 @@ object PendingSummaryNotificationManager {
     ) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (!NotificationPermissionUtils.canPostNotifications(context)) {
+            notificationManager.cancel(PENDING_SUMMARY_NOTIFICATION_ID)
+            return
+        }
 
         val isEnabled = isEnabledOverride ?: isPendingSummaryEnabled(context)
         val pendingTasks = todayTasks.filter { !it.isCompleted }
@@ -78,7 +84,7 @@ object PendingSummaryNotificationManager {
 
         val inboxStyle = NotificationCompat.InboxStyle()
             .setBigContentTitle(titleText)
-            .setSummaryText("Daily Schedule Summary")
+            .setSummaryText(context.getString(R.string.pending_summary_notification))
 
         // Format pending tasks list with name and time for expanded notification panel
         pendingTasks.take(12).forEach { task ->
@@ -93,7 +99,7 @@ object PendingSummaryNotificationManager {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(titleText)
-            .setContentText("Swipe down to expand and list remaining tasks")
+            .setContentText(context.getString(R.string.expand_pending_tasks))
             .setStyle(inboxStyle)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true) // Appears in notification panel when user swipes down

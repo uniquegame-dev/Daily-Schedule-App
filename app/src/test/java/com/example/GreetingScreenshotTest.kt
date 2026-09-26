@@ -16,7 +16,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(qualifiers = RobolectricDeviceQualifiers.Pixel8, sdk = [36])
+@Config(qualifiers = RobolectricDeviceQualifiers.Pixel8, sdk = [35])
 class GreetingScreenshotTest {
 
     @get:Rule
@@ -30,11 +30,10 @@ class GreetingScreenshotTest {
             notes = "Review daily sprint goals",
             date = "2026-09-23",
             time = "09:30",
-            dueTimestamp = System.currentTimeMillis(),
+            dueTimestamp = Long.MAX_VALUE,
             isCompleted = false,
             hasReminder = true,
-            category = "Work",
-            priority = "High"
+            category = "Work"
         )
 
         composeTestRule.setContent {

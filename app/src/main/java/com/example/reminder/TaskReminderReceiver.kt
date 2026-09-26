@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.AppDatabase
 import com.example.util.TimeUtils
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +37,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         when (action) {
             ACTION_REMINDER -> {
-                val title = intent.getStringExtra(EXTRA_TASK_TITLE) ?: "Task Reminder"
+                val title = intent.getStringExtra(EXTRA_TASK_TITLE)
+                    ?: context.getString(R.string.task_reminder)
                 val notes = intent.getStringExtra(EXTRA_TASK_NOTES) ?: ""
                 val time = intent.getStringExtra(EXTRA_TASK_TIME) ?: ""
 
@@ -83,6 +85,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         notes: String,
         time: String
     ) {
+        if (!NotificationPermissionUtils.canPostNotifications(context)) return
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -140,7 +143,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
             .setContentIntent(pendingContentIntent)
             .addAction(
                 android.R.drawable.checkbox_on_background,
-                "Mark as Done",
+                context.getString(R.string.mark_done),
                 pendingMarkDoneIntent
             )
             .build()

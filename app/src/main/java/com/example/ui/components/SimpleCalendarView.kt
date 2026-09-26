@@ -34,12 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.TaskEntity
+import com.example.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -122,7 +124,7 @@ fun SimpleCalendarView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous Month"
+                            contentDescription = stringResource(R.string.previous_month)
                         )
                     }
 
@@ -136,7 +138,7 @@ fun SimpleCalendarView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next Month"
+                            contentDescription = stringResource(R.string.next_month)
                         )
                     }
                 }

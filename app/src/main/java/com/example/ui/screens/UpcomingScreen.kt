@@ -29,9 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.TaskEntity
+import com.example.R
 import com.example.ui.components.SimpleCalendarView
 import com.example.ui.components.TaskItemCard
 import java.text.SimpleDateFormat
@@ -50,6 +52,9 @@ fun UpcomingScreen(
     onAddTaskForSelectedDate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val remainingUpcomingTasks = remember(upcomingTasks, selectedDateStr) {
+        upcomingTasks.filterNot { it.date == selectedDateStr }
+    }
     val displayDateFormatted = remember(selectedDateStr) {
         try {
             val formatInput = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -71,7 +76,7 @@ fun UpcomingScreen(
         // Title Header
         item {
             Text(
-                text = "Calendar & Upcoming",
+                text = stringResource(R.string.calendar_upcoming),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -98,7 +103,7 @@ fun UpcomingScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Schedule for Selected Date",
+                        text = stringResource(R.string.selected_date_schedule),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -116,7 +121,7 @@ fun UpcomingScreen(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Add Task")
+                    Text(stringResource(R.string.add_task))
                 }
             }
         }
@@ -139,7 +144,7 @@ fun UpcomingScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No tasks scheduled for this date.",
+                            text = stringResource(R.string.no_tasks_date),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -161,23 +166,23 @@ fun UpcomingScreen(
         item {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "All Future Upcoming Tasks",
+                text = stringResource(R.string.all_future_tasks),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
 
-        if (upcomingTasks.isEmpty()) {
+        if (remainingUpcomingTasks.isEmpty()) {
             item {
                 Text(
-                    text = "No future upcoming tasks scheduled.",
+                    text = stringResource(R.string.no_future_tasks),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
         } else {
-            items(upcomingTasks, key = { "upcoming_${it.id}" }) { task ->
+            items(remainingUpcomingTasks, key = { "upcoming_${it.id}" }) { task ->
                 TaskItemCard(
                     task = task,
                     onToggleCompletion = onToggleCompletion,

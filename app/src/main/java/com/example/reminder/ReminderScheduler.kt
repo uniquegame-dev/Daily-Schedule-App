@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.TaskEntity
 
 object ReminderScheduler {
@@ -101,6 +102,7 @@ object ReminderScheduler {
     }
 
     fun showTestNotification(context: Context) {
+        if (!NotificationPermissionUtils.canPostNotifications(context)) return
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -123,8 +125,8 @@ object ReminderScheduler {
 
         val notification = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setContentTitle("🔔 Daily Schedule Reminder Test")
-            .setContentText("Your reminders are set up and active!")
+            .setContentTitle(context.getString(R.string.reminder_test_title))
+            .setContentText(context.getString(R.string.reminder_test_message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

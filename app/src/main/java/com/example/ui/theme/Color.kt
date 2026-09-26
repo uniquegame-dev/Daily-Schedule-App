@@ -19,6 +19,14 @@ val OnSurfaceDark = Color(0xFF0F172A)               // Dark slate surface text
 val TextMuted = Color(0xFF475569)                  // Secondary dark slate gray text
 val BorderLight = Color(0xFFCBD5E1)                 // Clean subtle card border
 
+val BackgroundDark = Color(0xFF0B1220)
+val SurfaceDark = Color(0xFF111827)
+val SurfaceVariantDark = Color(0xFF1E293B)
+val OnBackgroundLight = Color(0xFFF8FAFC)
+val OnSurfaceLight = Color(0xFFF1F5F9)
+val TextMutedDark = Color(0xFFCBD5E1)
+val BorderDark = Color(0xFF475569)
+
 // Priority Colors
 val PriorityHigh = Color(0xFFEF4444)
 val PriorityMedium = Color(0xFFD97706)

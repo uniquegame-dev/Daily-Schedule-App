@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -54,11 +55,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.example.R
 
 @Composable
 fun NotificationSettingsDialog(
@@ -85,12 +89,21 @@ fun NotificationSettingsDialog(
 
     // Check alarm manager exact alarm permission
     val alarmManager = remember { context.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
-    val isExactAlarmAllowed = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    var isExactAlarmAllowed by remember { mutableStateOf(true) }
+
+    fun refreshPermissionState() {
+        isNotificationGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        isExactAlarmAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             alarmManager.canScheduleExactAlarms()
-        } else {
-            true
-        }
+    }
+
+    LifecycleResumeEffect(Unit) {
+        refreshPermissionState()
+        onPauseOrDispose { }
     }
 
     // Notification permission launcher
@@ -123,7 +136,7 @@ fun NotificationSettingsDialog(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "Notification Settings",
+                    text = stringResource(R.string.notification_settings),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
             }
@@ -150,13 +163,13 @@ fun NotificationSettingsDialog(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Daily Pending Tasks Summary",
+                                    text = stringResource(R.string.pending_summary),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Ongoing drawer notification",
+                                    text = stringResource(R.string.ongoing_notification),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -174,7 +187,7 @@ fun NotificationSettingsDialog(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "Shows a live summary of remaining tasks when you swipe down from the top. Lists task names and times, auto-updates when completed, and clears when all tasks are done.",
+                            text = stringResource(R.string.pending_summary_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -204,12 +217,12 @@ fun NotificationSettingsDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Individual Task Reminders",
+                                text = stringResource(R.string.individual_reminders),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = "Configured separately per task with options: At Task Time, 5 Mins Before, 15 Mins Before.",
+                                text = stringResource(R.string.individual_reminders_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -221,7 +234,7 @@ fun NotificationSettingsDialog(
 
                 // 3. System Permissions Status
                 Text(
-                    text = "System Permissions",
+                    text = stringResource(R.string.system_permissions),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -257,13 +270,13 @@ fun NotificationSettingsDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Post Notifications",
+                                    text = stringResource(R.string.post_notifications),
                                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = if (isNotificationGranted) "Granted" else "Permission required",
+                                    text = if (isNotificationGranted) stringResource(R.string.granted) else stringResource(R.string.permission_required),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isNotificationGranted) Color(0xFF059669) else Color(0xFFD97706)
                                 )
@@ -276,7 +289,7 @@ fun NotificationSettingsDialog(
                                 onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
                                 modifier = Modifier.testTag("btn_request_notif_perm")
                             ) {
-                                Text("Enable", fontSize = 12.sp)
+                                Text(stringResource(R.string.enable), fontSize = 12.sp)
                             }
                         }
                     }
@@ -314,13 +327,13 @@ fun NotificationSettingsDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Exact Alarm Timing",
+                                    text = stringResource(R.string.exact_alarm_timing),
                                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = if (isExactAlarmAllowed) "Allowed" else "System restriction",
+                                    text = if (isExactAlarmAllowed) stringResource(R.string.allowed) else stringResource(R.string.system_restriction),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (isExactAlarmAllowed) Color(0xFF059669) else Color(0xFFD97706)
                                 )
@@ -332,13 +345,16 @@ fun NotificationSettingsDialog(
                             TextButton(
                                 onClick = {
                                     try {
-                                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                        val intent = Intent(
+                                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                            Uri.parse("package:${context.packageName}")
+                                        )
                                         context.startActivity(intent)
                                     } catch (_: Exception) {}
                                 },
                                 modifier = Modifier.testTag("btn_request_alarm_perm")
                             ) {
-                                Text("Settings", fontSize = 12.sp)
+                                Text(stringResource(R.string.settings), fontSize = 12.sp)
                             }
                         }
                     }
@@ -360,7 +376,7 @@ fun NotificationSettingsDialog(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Send Test Reminder Notification")
+                    Text(stringResource(R.string.send_test_notification))
                 }
             }
         },
@@ -370,7 +386,7 @@ fun NotificationSettingsDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.testTag("btn_close_notif_settings")
             ) {
-                Text("Done")
+                Text(stringResource(R.string.done))
             }
         }
     )

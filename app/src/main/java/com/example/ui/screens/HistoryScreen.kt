@@ -40,10 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.TaskEntity
+import com.example.R
 import com.example.ui.components.ActivityHeatmapView
 import com.example.ui.components.TaskItemCard
 import java.text.SimpleDateFormat
@@ -69,8 +71,8 @@ fun HistoryScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("Clear Completed Tasks?") },
-            text = { Text("This will permanently remove all completed tasks from your history log.") },
+            title = { Text(stringResource(R.string.clear_completed_question)) },
+            text = { Text(stringResource(R.string.clear_completed_message)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -79,12 +81,12 @@ fun HistoryScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Clear All")
+                    Text(stringResource(R.string.clear_all))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -106,14 +108,14 @@ fun HistoryScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Task History",
+                        text = stringResource(R.string.task_history),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Activity intensity & completed task log",
+                        text = stringResource(R.string.history_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -130,11 +132,11 @@ fun HistoryScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteSweep,
-                            contentDescription = "Clear Completed",
+                            contentDescription = stringResource(R.string.clear_completed),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Clear")
+                        Text(stringResource(R.string.clear))
                     }
                 }
             }
@@ -173,14 +175,14 @@ fun HistoryScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Activity for $formattedDateTitle",
+                            text = stringResource(R.string.activity_for_date, formattedDateTitle),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${completedDateTasks.size} Completed • ${missedDateTasks.size} Missed/Pending",
+                            text = stringResource(R.string.activity_counts, completedDateTasks.size, missedDateTasks.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
@@ -191,7 +193,7 @@ fun HistoryScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     TextButton(onClick = { selectedHeatmapDate = null }) {
-                        Text("Show All")
+                        Text(stringResource(R.string.show_all))
                     }
                 }
             }
@@ -199,7 +201,7 @@ fun HistoryScreen(
             if (dateTasks.isEmpty()) {
                 item {
                     Text(
-                        text = "No tasks were recorded for $dateStr.",
+                        text = stringResource(R.string.no_tasks_recorded, dateStr),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 12.dp)
@@ -221,14 +223,14 @@ fun HistoryScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Search task history...") },
+                    placeholder = { Text(stringResource(R.string.search_history)) },
                     leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
                     },
                     trailingIcon = if (searchQuery.isNotEmpty()) {
                         {
                             IconButton(onClick = { onSearchQueryChange("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_search))
                             }
                         }
                     } else null,
@@ -247,7 +249,7 @@ fun HistoryScreen(
                 ) {
                     item {
                         Text(
-                            text = "Category:",
+                            text = stringResource(R.string.category_label),
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(top = 8.dp, end = 4.dp)
                         )
@@ -281,12 +283,12 @@ fun HistoryScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "No history entries found",
+                                text = stringResource(R.string.no_history),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Tasks you complete or past entries will appear here.",
+                                text = stringResource(R.string.history_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

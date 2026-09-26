@@ -27,21 +27,29 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.TaskEntity
+import com.example.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @Composable
 fun TimeDashboardCard(
@@ -50,8 +58,15 @@ fun TimeDashboardCard(
     onOpenNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cal = remember { Calendar.getInstance() }
-    val now = remember { Date() }
+    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            nowMillis = System.currentTimeMillis()
+            delay(1_000L)
+        }
+    }
+    val now = Date(nowMillis)
+    val cal = Calendar.getInstance().apply { time = now }
 
     // Today progress calculation
     val hour = cal.get(Calendar.HOUR_OF_DAY)
@@ -67,7 +82,7 @@ fun TimeDashboardCard(
     val totalDaysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
     val monthProgress = (dayOfMonth.toFloat() / totalDaysInMonth).coerceIn(0f, 1f)
     val daysRemainingInMonth = totalDaysInMonth - dayOfMonth
-    val monthName = remember { SimpleDateFormat("MMM", Locale.getDefault()).format(now) }
+    val monthName = SimpleDateFormat("MMM", Locale.getDefault()).format(now)
 
     // Year progress calculation
     val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
@@ -77,7 +92,7 @@ fun TimeDashboardCard(
     val currentYear = cal.get(Calendar.YEAR)
 
     // Header date
-    val fullDateStr = remember { SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault()).format(now) }
+    val fullDateStr = SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault()).format(now)
 
     // Task stats
     val totalTasks = todayTasks.size
@@ -123,7 +138,7 @@ fun TimeDashboardCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
-                            contentDescription = "Time Dashboard",
+                            contentDescription = stringResource(R.string.time_dashboard),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -131,7 +146,7 @@ fun TimeDashboardCard(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Time Dashboard",
+                            text = stringResource(R.string.time_dashboard),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
@@ -159,7 +174,7 @@ fun TimeDashboardCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Notification Settings",
+                            contentDescription = stringResource(R.string.notification_settings_description),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -176,7 +191,7 @@ fun TimeDashboardCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = "Test Notification",
+                            contentDescription = stringResource(R.string.test_notification),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )

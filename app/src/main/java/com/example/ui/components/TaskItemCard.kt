@@ -4,7 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,8 +34,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,19 +48,28 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import com.example.data.TaskEntity
+import com.example.R
 import com.example.util.TimeUtils
+import com.example.util.TaskStatus
+import com.example.util.calculateTaskStatus
 import com.example.ui.theme.CategoryFinance
 import com.example.ui.theme.CategoryGeneral
 import com.example.ui.theme.CategoryHealth
 import com.example.ui.theme.CategoryPersonal
 import com.example.ui.theme.CategoryStudy
 import com.example.ui.theme.CategoryWork
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @Composable
 fun TaskItemCard(
@@ -66,19 +80,69 @@ fun TaskItemCard(
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var nowMillis by remember(task.id, task.dueTimestamp) {
+        mutableLongStateOf(System.currentTimeMillis())
+    }
+    LaunchedEffect(task.id, task.dueTimestamp, task.isCompleted) {
+        while (isActive) {
+            nowMillis = System.currentTimeMillis()
+            delay(30_000L)
+        }
+    }
+    val status = calculateTaskStatus(task, nowMillis)
+    val isCompleted = status == TaskStatus.COMPLETED
+    val isMissed = status == TaskStatus.MISSED
+    val completionStateDescription = stringResource(
+        when (status) {
+            TaskStatus.COMPLETED -> R.string.completed
+            TaskStatus.MISSED -> R.string.missed
+            TaskStatus.PENDING -> R.string.not_completed
+        }
+    )
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text(stringResource(R.string.delete_task_question)) },
+            text = { Text(stringResource(R.string.delete_task_message, task.title)) },
+            confirmButton = {
+                Button(onClick = {
+                    showDeleteConfirmation = false
+                    onDeleteTask(task)
+                }) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 
     val cardBgColor by animateColorAsState(
-        targetValue = if (task.isCompleted) {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-        } else {
-            MaterialTheme.colorScheme.surface
+        targetValue = when (status) {
+            TaskStatus.COMPLETED -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+            TaskStatus.MISSED -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            TaskStatus.PENDING -> MaterialTheme.colorScheme.surface
         },
         label = "cardBgColor"
     )
 
     val contentAlpha by animateFloatAsState(
-        targetValue = if (task.isCompleted) 0.55f else 1f,
+        targetValue = when (status) {
+            TaskStatus.COMPLETED -> 0.78f
+            TaskStatus.MISSED -> 0.62f
+            TaskStatus.PENDING -> 1f
+        },
         label = "contentAlpha"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = when (status) {
+            TaskStatus.COMPLETED -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.65f)
+            TaskStatus.MISSED -> MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
+            TaskStatus.PENDING -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        },
+        label = "borderColor"
     )
 
     Card(
@@ -87,14 +151,14 @@ fun TaskItemCard(
             .padding(vertical = 4.dp)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                color = borderColor,
                 shape = RoundedCornerShape(16.dp)
             )
             .testTag("task_item_${task.id}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardBgColor),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (task.isCompleted) 0.dp else 1.dp
+            defaultElevation = if (status == TaskStatus.PENDING) 1.dp else 0.dp
         )
     ) {
         Row(
@@ -109,24 +173,34 @@ fun TaskItemCard(
                     .size(28.dp)
                     .clip(CircleShape)
                     .background(
-                        if (task.isCompleted) MaterialTheme.colorScheme.primary
+                        if (isCompleted) MaterialTheme.colorScheme.secondary
                         else Color.Transparent
                     )
                     .border(
                         width = 2.dp,
-                        color = if (task.isCompleted) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline,
+                        color = when {
+                            isCompleted -> MaterialTheme.colorScheme.secondary
+                            isMissed -> MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                            else -> MaterialTheme.colorScheme.outline
+                        },
                         shape = CircleShape
                     )
-                    .clickable { onToggleCompletion(task) }
+                    .semantics {
+                        stateDescription = completionStateDescription
+                    }
+                    .toggleable(
+                        value = isCompleted,
+                        role = Role.Checkbox,
+                        onValueChange = { onToggleCompletion(task) }
+                    )
                     .testTag("checkbox_task_${task.id}"),
                 contentAlignment = Alignment.Center
             ) {
-                if (task.isCompleted) {
+                if (isCompleted) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Completed",
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        contentDescription = stringResource(R.string.completed),
+                        tint = MaterialTheme.colorScheme.onSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -145,9 +219,10 @@ fun TaskItemCard(
                     text = task.title,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (isMissed) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -172,14 +247,16 @@ fun TaskItemCard(
                     // Time pill
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        color = if (isMissed) MaterialTheme.colorScheme.surfaceVariant
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                     ) {
                         Text(
                             text = TimeUtils.ensure12HourFormat(task.time),
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = if (isMissed) MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
@@ -188,10 +265,10 @@ fun TaskItemCard(
                     CategoryTag(category = task.category)
 
                     // Reminder Icon
-                    if (task.hasReminder && !task.isCompleted) {
+                    if (task.hasReminder && status == TaskStatus.PENDING) {
                         Icon(
                             imageVector = Icons.Default.Alarm,
-                            contentDescription = "Reminder set",
+                            contentDescription = stringResource(R.string.reminder_set),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -207,7 +284,7 @@ fun TaskItemCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Task Actions",
+                        contentDescription = stringResource(R.string.task_actions),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -217,7 +294,7 @@ fun TaskItemCard(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Edit Task") },
+                        text = { Text(stringResource(R.string.edit_task)) },
                         leadingIcon = {
                             Icon(Icons.Default.Edit, contentDescription = null)
                         },
@@ -227,7 +304,7 @@ fun TaskItemCard(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Delete Task") },
+                        text = { Text(stringResource(R.string.delete_task)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.DeleteOutline,
@@ -237,7 +314,7 @@ fun TaskItemCard(
                         },
                         onClick = {
                             showMenu = false
-                            onDeleteTask(task)
+                            showDeleteConfirmation = true
                         }
                     )
                 }

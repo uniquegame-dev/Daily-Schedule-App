@@ -28,15 +28,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.TaskEntity
+import com.example.R
 import com.example.ui.components.TaskItemCard
 import com.example.ui.components.TimeDashboardCard
 
 @Composable
 fun TodayScreen(
     todayTasks: List<TaskEntity>,
+    allTodayTasks: List<TaskEntity>,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
     onToggleCompletion: (TaskEntity) -> Unit,
@@ -56,7 +59,7 @@ fun TodayScreen(
 
         // Time Dashboard (Yearly, Monthly, Today progress & remaining time)
         TimeDashboardCard(
-            todayTasks = todayTasks,
+            todayTasks = allTodayTasks,
             onTestNotification = onTestNotification,
             onOpenNotificationSettings = onOpenNotificationSettings
         )
@@ -70,7 +73,7 @@ fun TodayScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Today's Checklist",
+                text = stringResource(R.string.todays_checklist),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -116,14 +119,14 @@ fun TodayScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = if (selectedCategory == "All") "Your schedule is clear for today!"
-                        else "No $selectedCategory tasks found for today",
+                        text = if (selectedCategory == "All") stringResource(R.string.schedule_clear)
+                        else stringResource(R.string.no_category_tasks, selectedCategory),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Tap below to add a new task and stay organized.",
+                        text = stringResource(R.string.add_task_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -135,7 +138,7 @@ fun TodayScreen(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add First Task")
+                        Text(stringResource(R.string.add_first_task))
                     }
                 }
             }

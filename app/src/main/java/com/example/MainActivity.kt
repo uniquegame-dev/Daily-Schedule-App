@@ -44,8 +44,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.TaskViewModel
 import com.example.ui.components.AddTaskBottomSheet
@@ -77,7 +79,9 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
+    val todayDateStr by viewModel.todayDateStr.collectAsStateWithLifecycle()
     val todayTasks by viewModel.todayTasks.collectAsStateWithLifecycle()
+    val allTodayTasks by viewModel.allTodayTasks.collectAsStateWithLifecycle()
     val allTasks by viewModel.allTasks.collectAsStateWithLifecycle()
     val selectedCalendarDate by viewModel.selectedCalendarDate.collectAsStateWithLifecycle()
     val selectedDateTasks by viewModel.selectedDateTasks.collectAsStateWithLifecycle()
@@ -85,7 +89,8 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
     val historyTasks by viewModel.historyTasks.collectAsStateWithLifecycle()
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val categoryFilter by viewModel.categoryFilter.collectAsStateWithLifecycle()
+    val todayCategoryFilter by viewModel.todayCategoryFilter.collectAsStateWithLifecycle()
+    val historyCategoryFilter by viewModel.historyCategoryFilter.collectAsStateWithLifecycle()
 
     val showTaskSheet by viewModel.showTaskSheet.collectAsStateWithLifecycle()
     val editingTask by viewModel.editingTask.collectAsStateWithLifecycle()
@@ -95,13 +100,18 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshToday()
+        onPauseOrDispose { }
+    }
+
     // Permission launcher for Notifications on Android 13+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
                 scope.launch {
-                    snackbarHostState.showSnackbar("Notifications enabled!")
+                    snackbarHostState.showSnackbar(context.getString(R.string.notifications_enabled))
                 }
             }
         }
@@ -132,22 +142,22 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentTab == 0,
                     onClick = { viewModel.setTab(0) },
-                    icon = { Icon(Icons.Default.Checklist, contentDescription = "Today") },
-                    label = { Text("Today") },
+                    icon = { Icon(Icons.Default.Checklist, contentDescription = stringResource(R.string.today)) },
+                    label = { Text(stringResource(R.string.today)) },
                     modifier = Modifier.testTag("tab_today")
                 )
                 NavigationBarItem(
                     selected = currentTab == 1,
                     onClick = { viewModel.setTab(1) },
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Upcoming") },
-                    label = { Text("Upcoming") },
+                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = stringResource(R.string.upcoming)) },
+                    label = { Text(stringResource(R.string.upcoming)) },
                     modifier = Modifier.testTag("tab_upcoming")
                 )
                 NavigationBarItem(
                     selected = currentTab == 2,
                     onClick = { viewModel.setTab(2) },
-                    icon = { Icon(Icons.Default.History, contentDescription = "History") },
-                    label = { Text("History") },
+                    icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.history)) },
+                    label = { Text(stringResource(R.string.history)) },
                     modifier = Modifier.testTag("tab_history")
                 )
             }
@@ -156,14 +166,14 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
             if (currentTab != 2) {
                 FloatingActionButton(
                     onClick = {
-                        val targetDate = if (currentTab == 1) selectedCalendarDate else viewModel.todayDateStr
+                        val targetDate = if (currentTab == 1) selectedCalendarDate else todayDateStr
                         viewModel.openAddTaskSheet(targetDate)
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.testTag("fab_add_task")
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Task")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_task))
                 }
             }
         }
@@ -176,12 +186,13 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
             when (currentTab) {
                 0 -> TodayScreen(
                     todayTasks = todayTasks,
-                    selectedCategory = categoryFilter,
-                    onCategorySelected = { viewModel.setCategoryFilter(it) },
+                    allTodayTasks = allTodayTasks,
+                    selectedCategory = todayCategoryFilter,
+                    onCategorySelected = { viewModel.setTodayCategoryFilter(it) },
                     onToggleCompletion = { viewModel.toggleTaskCompletion(it) },
                     onEditTask = { viewModel.openEditTaskSheet(it) },
                     onDeleteTask = { viewModel.deleteTask(it) },
-                    onAddTask = { viewModel.openAddTaskSheet(viewModel.todayDateStr) },
+                    onAddTask = { viewModel.openAddTaskSheet(todayDateStr) },
                     onTestNotification = { viewModel.testNotification() },
                     onOpenNotificationSettings = { showNotificationSettingsDialog = true }
                 )
@@ -200,9 +211,9 @@ fun MainScreen(viewModel: TaskViewModel = viewModel()) {
                     allTasks = allTasks,
                     historyTasks = historyTasks,
                     searchQuery = searchQuery,
-                    categoryFilter = categoryFilter,
+                    categoryFilter = historyCategoryFilter,
                     onSearchQueryChange = { viewModel.setSearchQuery(it) },
-                    onCategoryFilterChange = { viewModel.setCategoryFilter(it) },
+                    onCategoryFilterChange = { viewModel.setHistoryCategoryFilter(it) },
                     onToggleCompletion = { viewModel.toggleTaskCompletion(it) },
                     onEditTask = { viewModel.openEditTaskSheet(it) },
                     onDeleteTask = { viewModel.deleteTask(it) },
